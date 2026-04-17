@@ -1,0 +1,48 @@
+# ── Auth (NEVER commit this — contains live Firebase tokens) ─────────────────
+storage_state.json
+
+# ── Test outputs (generated on each run) ─────────────────────────────────────
+reports/
+screenshots/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+.env/
+ENV/
+
+# ── Playwright ────────────────────────────────────────────────────────────────
+playwright/.auth/
+test-results/
+playwright-report/
+
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.log
+*.tmp
+.env
+.env.local
