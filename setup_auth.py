@@ -33,9 +33,16 @@ async def run():
     async with async_playwright() as p:
         browser = await p.chromium.launch(
             headless=False,
-            args=["--start-maximized"],
+            args=[
+                "--start-maximized",
+                "--disable-blink-features=AutomationControlled",
+            ],
         )
-        context = await browser.new_context(no_viewport=True)
+        context = await browser.new_context(
+            no_viewport=True,
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            locale="en-US",
+        )
         page    = await context.new_page()
 
         print(f"\n🌐  Opening: {BASE_URL}")
@@ -48,6 +55,22 @@ async def run():
 
         input("    Press ENTER when you are fully logged in ▶ ")
 
+        # Wait for app to fully initialize (look for Refresh button which indicates auth + app ready)
+        print("\n⏳  Waiting for app to fully initialize...")
+        try:
+            await page.wait_for_selector('button:has-text("Refresh")', timeout=5_000)
+            print("✅  App initialized successfully!")
+        except Exception:
+            print("⚠️   Refresh button not found, but continuing anyway...")
+
+        # Wait for all network activity to complete
+        print("⏳  Waiting for network to settle...")
+        try:
+            await page.wait_for_load_state("networkidle", timeout=5_000)
+            print("✅  Network settled!")
+        except Exception:
+            print("⚠️   Network idle timeout, but continuing anyway...")
+
         # Verify we're actually logged in before saving
         current_url = page.url
         if "pose-director-demo" not in current_url:
@@ -55,14 +78,14 @@ async def run():
             print("    Please complete login first, then press ENTER again.\n")
             input("    Press ENTER when logged in ▶ ")
 
-        # Save auth state
+        # Save auth state (cookies + localStorage — everything Playwright can capture)
         await context.storage_state(path=STORAGE_STATE_PATH)
 
         size = os.path.getsize(STORAGE_STATE_PATH)
         print(f"\n✅  Session saved  →  {STORAGE_STATE_PATH}  ({size:,} bytes)")
         print("    You can now run the test suite:\n")
-        print("        python -m pytest          # all tests")
-        print("        python -m pytest -m smoke # smoke tests only\n")
+        print("        python3.11 -m pytest          # all tests")
+        print("        python3.11 -m pytest -m smoke # smoke tests only\n")
 
         await browser.close()
 

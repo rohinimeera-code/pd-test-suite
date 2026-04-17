@@ -30,7 +30,7 @@ echo ""
 # ── 1. Ensure storage_state.json exists ───────────────────────────────────────
 if [ ! -f "storage_state.json" ]; then
   echo "❌  storage_state.json not found."
-  echo "    Run once:  python setup_auth.py"
+  echo "    Run once:  python3.11 setup_auth.py"
   exit 1
 fi
 
@@ -38,7 +38,7 @@ fi
 mkdir -p reports screenshots
 
 # ── 3. Build pytest command ───────────────────────────────────────────────────
-CMD="python -m pytest"
+CMD="python3.11 -m pytest"
 
 if [ -n "$MARKER" ]; then
   CMD="$CMD -m $MARKER"
