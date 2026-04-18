@@ -48,10 +48,10 @@ class JudgePage(BasePage):
         self.url_input         = page.get_by_placeholder("Url:")
 
         # Dropdowns (identified by their default selected option text)
-        self.status_dropdown   = page.get_by_role("combobox").filter(has_text="CRAWLED")
+        self.status_dropdown   = page.locator("select").first   # only select without an id
         self.batch_dropdown    = page.locator("select#batchid")
-        self.judge_dropdown    = page.get_by_role("combobox").filter(has_text="Judges")
-        self.date_dropdown     = page.get_by_role("combobox").filter(has_text="Time")
+        self.judge_dropdown    = page.locator("select#judgedby")
+        self.date_dropdown     = page.locator("select#judgedDatePreset")
 
         # Buttons
         self.search_btn        = page.get_by_role("button", name="Search")
@@ -128,6 +128,11 @@ class JudgePage(BasePage):
         return [options.nth(i).inner_text().strip() for i in range(options.count())]
 
     def get_judge_options(self) -> list[str]:
+        # Judge names are loaded from Firebase after page init — wait for them.
+        self.page.wait_for_function(
+            "document.querySelector('select#judgedby').options.length > 1",
+            timeout=10_000,
+        )
         options = self.judge_dropdown.locator("option")
         return [options.nth(i).inner_text().strip() for i in range(options.count())]
 
