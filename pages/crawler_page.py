@@ -29,7 +29,9 @@ class CrawlerPage(BasePage):
         super().__init__(page)
 
         # ── Add-pin form ──────────────────────────────────────────────────────
-        self.category_input    = page.get_by_placeholder("Enter category")
+        # Scope to inner <input> to avoid strict-mode violation from the outer
+        # <app-category-autocomplete> element sharing the same placeholder.
+        self.category_input    = page.locator("app-category-autocomplete input")
         self.pin_name_input    = page.get_by_placeholder("Enter pin name")
         self.query_input       = page.get_by_placeholder("Enter search query")
         self.add_btn           = page.get_by_role("button", name="Add")
@@ -53,6 +55,7 @@ class CrawlerPage(BasePage):
     def goto(self):
         self.navigate(self.PATH)
         expect(self.add_btn).to_be_visible(timeout=10_000)
+        expect(self.table_rows.first).to_be_visible(timeout=15_000)
 
     # ── Add-pin form actions ──────────────────────────────────────────────────
 
@@ -66,6 +69,8 @@ class CrawlerPage(BasePage):
         self.category_input.clear()
         self.category_input.fill(category)
         self.wait_ms(300)  # allow autocomplete to process
+        # Dismiss the autocomplete dropdown so it doesn't block the Add button.
+        self.category_input.press("Escape")
 
         if pin_name:
             self.pin_name_input.clear()

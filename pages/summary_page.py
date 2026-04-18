@@ -31,16 +31,17 @@ class SummaryPage(BasePage):
         self.cancel_btn       = page.get_by_role("button", name="Cancel")
         self.confirm_btn      = page.get_by_role("button", name="Yes, Refresh Statistics")
 
-        # Table
-        self.table            = page.get_by_role("table")
-        self.table_body_rows  = page.locator("table tbody tr")
-        self.total_row        = page.locator("tr").filter(has_text="Total")
+        # Table (div-based heatmap layout, no semantic <table> element)
+        self.table            = page.locator("div.heatmap-container")
+        self.table_body_rows  = page.locator("div.heatmap-row")
+        self.total_row        = page.locator("div.heatmap-summary-row")
 
     # ── Navigation ────────────────────────────────────────────────────────────
 
     def goto(self):
         self.navigate(self.PATH)
         expect(self.refresh_btn).to_be_visible(timeout=10_000)
+        expect(self.table).to_be_visible(timeout=15_000)
 
     # ── Actions ───────────────────────────────────────────────────────────────
 

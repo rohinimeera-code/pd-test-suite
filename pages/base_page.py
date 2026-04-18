@@ -19,14 +19,14 @@ class BasePage:
     # ── Navigation ────────────────────────────────────────────────────────────
 
     def navigate(self, path: str):
-        """Go to a path under BASE_URL and wait for network to settle."""
+        """Go to a path under BASE_URL and wait for the page to load."""
         self.page.goto(f"{BASE_URL}{path}")
-        self.page.wait_for_load_state("networkidle", timeout=15_000)
+        self.page.wait_for_load_state("load", timeout=15_000)
 
     def click_nav(self, link_text: str):
         """Click a top-level navigation link by its visible label."""
         self.page.get_by_role("link", name=link_text, exact=True).first.click()
-        self.page.wait_for_load_state("networkidle", timeout=15_000)
+        self.page.wait_for_load_state("load", timeout=15_000)
 
     # ── Auth ──────────────────────────────────────────────────────────────────
 

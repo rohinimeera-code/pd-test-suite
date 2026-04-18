@@ -16,6 +16,7 @@ What it does:
 """
 
 import asyncio
+import json
 import os
 import sys
 from playwright.async_api import async_playwright
@@ -77,6 +78,38 @@ async def run():
             print(f"\n⚠️   Still on: {current_url}")
             print("    Please complete login first, then press ENTER again.\n")
             input("    Press ENTER when logged in ▶ ")
+
+        # Firebase v9+ stores auth tokens in IndexedDB, which Playwright's
+        # storage_state() doesn't capture. Read from IndexedDB and mirror the
+        # token into localStorage so the saved state includes it.
+        print("⏳  Extracting Firebase auth token from IndexedDB...")
+        firebase_token = await page.evaluate("""() => new Promise((resolve) => {
+            const req = indexedDB.open('firebaseLocalStorageDb');
+            req.onsuccess = (e) => {
+                const db = e.target.result;
+                const tx = db.transaction('firebaseLocalStorage', 'readonly');
+                const store = tx.objectStore('firebaseLocalStorage');
+                const all = store.getAll();
+                all.onsuccess = () => {
+                    const entry = all.result.find(r => r.fbase_key && r.fbase_key.startsWith('firebase:authUser'));
+                    resolve(entry ? JSON.stringify({ key: entry.fbase_key, value: entry.value }) : null);
+                };
+                all.onerror = () => resolve(null);
+            };
+            req.onerror = () => resolve(null);
+        })""")
+
+        if firebase_token:
+            parsed = json.loads(firebase_token)
+            # Store under two stable keys so conftest.py's init script can
+            # write them back into IndexedDB before Firebase SDK initialises.
+            await page.evaluate(f"""() => {{
+                localStorage.setItem('__pw_firebase_key__', {json.dumps(parsed['key'])});
+                localStorage.setItem('__pw_firebase_value__', {json.dumps(json.dumps(parsed['value']))});
+            }}""")
+            print(f"✅  Firebase token saved for Playwright (key: {parsed['key'][:50]})")
+        else:
+            print("⚠️   Could not find Firebase token in IndexedDB — auth may not persist in tests")
 
         # Save auth state (cookies + localStorage — everything Playwright can capture)
         await context.storage_state(path=STORAGE_STATE_PATH)

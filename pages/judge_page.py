@@ -38,7 +38,9 @@ class JudgePage(BasePage):
         super().__init__(page)
 
         # ── Search form locators ───────────────────────────────────────────────
-        self.category_input    = page.get_by_placeholder("Select category")
+        # Scope to inner <input> to avoid strict-mode violation from the outer
+        # <app-category-autocomplete> element sharing the same placeholder.
+        self.category_input    = page.locator("app-category-autocomplete input")
         self.description_input = page.get_by_placeholder("Description:")
         self.likes_input       = page.get_by_placeholder("Likes:")
         self.search_query_input= page.get_by_placeholder("Search query:")
@@ -47,7 +49,7 @@ class JudgePage(BasePage):
 
         # Dropdowns (identified by their default selected option text)
         self.status_dropdown   = page.get_by_role("combobox").filter(has_text="CRAWLED")
-        self.batch_dropdown    = page.get_by_role("combobox").filter(has_text="Batch Id:")
+        self.batch_dropdown    = page.locator("select#batchid")
         self.judge_dropdown    = page.get_by_role("combobox").filter(has_text="Judges")
         self.date_dropdown     = page.get_by_role("combobox").filter(has_text="Time")
 
@@ -74,6 +76,8 @@ class JudgePage(BasePage):
         self.category_input.clear()
         self.category_input.fill(category)
         self.wait_ms(300)
+        # Dismiss the autocomplete dropdown so it doesn't intercept other clicks.
+        self.category_input.press("Escape")
 
     def set_status(self, status_key: str):
         """status_key: 'ATTRACTIVE' | 'CRAWLED' | 'NORMAL' | etc."""

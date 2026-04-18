@@ -45,6 +45,31 @@ def require_auth_state():
 
 
 # ── Inject Firebase auth into every browser context ───────────────────────────
+
+# Init script: runs before every page's scripts. Reads the Firebase token we
+# mirrored into localStorage during setup_auth.py and writes it back into
+# IndexedDB so the Firebase SDK (v9+) finds it on startup.
+_FIREBASE_INIT_SCRIPT = """
+(function () {
+    const key = localStorage.getItem('__pw_firebase_key__');
+    const val = localStorage.getItem('__pw_firebase_value__');
+    if (!key || !val) return;
+    const openReq = indexedDB.open('firebaseLocalStorageDb', 1);
+    openReq.onupgradeneeded = function (e) {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('firebaseLocalStorage')) {
+            db.createObjectStore('firebaseLocalStorage', { keyPath: 'fbase_key' });
+        }
+    };
+    openReq.onsuccess = function (e) {
+        const db = e.target.result;
+        const tx = db.transaction('firebaseLocalStorage', 'readwrite');
+        tx.objectStore('firebaseLocalStorage').put({ fbase_key: key, value: JSON.parse(val) });
+    };
+})();
+"""
+
+
 @pytest.fixture(scope="session")
 def browser_context_args(browser_context_args):
     """
@@ -56,6 +81,18 @@ def browser_context_args(browser_context_args):
         "storage_state": STORAGE_STATE_PATH,
         "viewport": {"width": 1440, "height": 900},
     }
+
+
+@pytest.fixture(scope="session")
+def context(browser, browser_context_args):
+    """
+    Override the default context fixture to install the Firebase IndexedDB
+    init script before any page loads.
+    """
+    ctx = browser.new_context(**browser_context_args)
+    ctx.add_init_script(_FIREBASE_INIT_SCRIPT)
+    yield ctx
+    ctx.close()
 
 
 # ── Verify auth is working at session start ───────────────────────────────────
