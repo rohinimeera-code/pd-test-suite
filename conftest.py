@@ -9,6 +9,7 @@ Key responsibilities:
   5. Wire up the pytest-html report metadata.
 """
 
+import base64
 import os
 import re
 import pytest
@@ -137,13 +138,15 @@ def screenshot_on_failure(page: Page, request):
 
         try:
             page.screenshot(path=screenshot, full_page=True)
-            # Attach inline to the pytest-html report
+            # Embed as base64 so the image is self-contained in the HTML
+            # report and works when shared or opened on another machine.
+            encoded = base64.b64encode(open(screenshot, "rb").read()).decode()
             request.node._report_sections.append(  # type: ignore[attr-defined]
                 (
                     "call",
                     "image",
-                    f'<img src="{screenshot}" style="max-width:800px;" '
-                    f'alt="failure screenshot"/>',
+                    f'<img src="data:image/png;base64,{encoded}" '
+                    f'style="max-width:800px;" alt="failure screenshot"/>',
                 )
             )
             print(f"\n📸  Failure screenshot → {screenshot}")
